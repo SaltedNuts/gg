@@ -1,0 +1,130 @@
+package o1.robots
+
+/** The class `Spinbot` represents the "brains" (or AI) of extremely simple robots
+  * that simply spin clockwise and never change location.
+  * @param name  the name of the spinbot
+  * @param body  the robot body whose actions the spinbot brain will control */
+class Spinbot(name: String, body: RobotBody) extends RobotBrain(name, body) {
+
+  /** Moves the robot. A spinbot simply spins 90 degrees clockwise as its move. */
+  def moveBody() = {
+    body.spinClockwise()
+  }
+
+}
+
+
+
+
+package o1.robots
+
+import o1._
+
+// TODO: proper implementation missing completely
+class Nosebot(name: String, body: RobotBody) extends RobotBrain(name, body) {
+
+  def moveBody()={
+    var truthVariable = mayMoveTowards(body.facing)
+    var counter = 0
+    while(!truthVariable && counter < 4) {
+      body.spinClockwise()
+      counter += 1
+      truthVariable = mayMoveTowards(body.facing)
+
+    }
+      if(mayMoveTowards(body.facing)) body.moveTowards(facing)
+  }
+
+  override def mayMoveTowards(direction: o1.CompassDir): Boolean ={
+    var square = body.neighboringSquare(direction)
+    !(square.isUnpassable) && square.robot.isEmpty
+  }
+
+  def attemptMove(): Boolean ={
+    if(mayMoveTowards(body.facing)){ body.moveTowards(facing)
+      true
+    }
+    else{ body.spinClockwise()
+      false
+    }
+  }
+
+}
+
+
+
+package o1.robots
+
+import o1.CompassDir
+import o1.grid.CompassDir.{East, North, South, West}
+
+import scala.util.Random
+
+// TODO: proper implementation missing completely
+class Staggerbot(name: String, body: RobotBody, randomSeed: Int) extends RobotBrain(name, body) {
+  private val generator = new Random(randomSeed)
+  private val directions = Vector[CompassDir](North, East, South, West)
+
+  def moveBody() = {
+    if(body.isIntact){
+    if(body.moveTowards(directions(generator.nextInt(4)))) body.spinTowards(directions(generator.nextInt(4)))
+    }
+  }
+
+
+}
+
+
+
+package o1.robots
+
+import o1._
+import scala.math._
+import GridPos._
+
+// TODO: proper implementation missing completely
+class Lovebot(name: String, body: RobotBody, val beloved: RobotBody) extends RobotBrain(name, body) {
+
+  private def belovedIsNeighbor: Boolean = {
+    val neighbors = body.world.neighbors(body.location, false)
+    neighbors.contains(beloved)
+  }
+
+  def moveBody() = {
+    val xDistance = abs(this.body.location.xDiff(beloved.location))
+    val yDistance = abs(this.body.location.yDiff(beloved.location))
+    val distance = xDistance + yDistance
+    if(distance != 1){
+     if(xDistance >= yDistance) {
+      this.body.moveTowards(this.body.location.xDirectionOf(beloved.location).get)
+     }
+     else{
+      this.body.moveTowards(this.body.location.yDirectionOf(beloved.location).get)
+     }
+
+    }
+
+  }
+}
+
+
+
+package o1.robots
+
+import o1._
+import o1.grid.CompassDir.{East, North, South, West}
+
+// TODO: proper implementation missing completely
+class Psychobot(name: String, body: RobotBody) extends RobotBrain(name, body) {
+
+  private val directions = Vector[CompassDir](North, East, South, West)
+
+  def moveBody() ={
+    var northHasRobot = body.location.pathTowards(North).
+
+
+   }
+}
+
+
+
