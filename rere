@@ -1,0 +1,224 @@
+package o1.adventure.draft
+
+import scala.io.StdIn._
+
+/** The class `Adventure` represents text adventure games. An adventure consists of a player and
+  * a number of areas that make up the game world. It provides methods for playing the game one
+  * turn at a time and for checking the state of the game.
+  *
+  * '''NOTE: The AdventureDraft module is not even close to being well designed.
+  * See Chapter 9.1 in the course materials.''' */
+class Adventure {
+
+  val title = "A Forest Adventure"
+
+  val middle      = new Area("Forest", "You are somewhere in the forest. There are a lot of trees here.\nBirds are singing.")
+  val northForest = new Area("Forest", "You are somewhere in the forest. A tangle of bushes blocks further passage north.\nBirds are singing.")
+  val southForest = new Area("Forest", "The forest just goes on and on.")
+  val clearing    = new Area("Forest Clearing", "You are at a small clearing in the middle of forest.\nNearly invisible, twisted paths lead in many directions.")
+  val tangle      = new Area("Tangle of Bushes", "You are in a dense tangle of bushes. It's hard to see exactly where you're going.")
+  val home        = new Area("Home", "Home sweet home!")
+  val destination = home
+
+     middle.setNeighbors(Vector("north" -> northForest, "east" -> tangle, "south" -> southForest, "west" -> clearing   ))
+northForest.setNeighbors(Vector(                        "east" -> tangle, "south" -> middle,      "west" -> clearing   ))
+southForest.setNeighbors(Vector("north" -> middle,      "east" -> tangle, "south" -> southForest, "west" -> clearing   ))
+   clearing.setNeighbors(Vector("north" -> northForest, "east" -> middle, "south" -> southForest, "west" -> northForest))
+     tangle.setNeighbors(Vector("north" -> northForest, "east" -> home,   "south" -> southForest, "west" -> northForest))
+       home.setNeighbors(Vector(                                                                  "west" -> tangle     ))
+
+  /** The character who is the protagonist of the adventure and whom the real-life player controls. */
+  val player = new Player(middle)
+
+  /** The number of turns that have passed since the start of the game. */
+  var turnCount = 0
+  /** The maximum number of turns that this adventure game allows before time runs out. */
+  val timeLimit = 40
+
+
+  /** Determines if the adventure is complete, that is, if the player has won. */
+  def isComplete = this.player.location == this.destination
+
+
+  /** Determines whether the player has won, lost, or quit, thereby ending the game. */
+  def isOver = this.isComplete || this.player.hasQuit || this.turnCount == this.timeLimit
+
+
+  /** Prints out a description of the player character's current location, as seen by the character. */
+  def printAreaInfo() = {
+    val area = this.player.location
+    println("\n\n" + area.name)
+    println("-" * area.name.length)
+    println(area.description)
+    print("\nExits available:")
+    if (area.northNeighbor.isDefined) {
+      print(" north")
+    }
+    if (area.eastNeighbor.isDefined) {
+      print(" east")
+    }
+    if (area.southNeighbor.isDefined) {
+      print(" south")
+    }
+    if (area.westNeighbor.isDefined) {
+      print(" west")
+    }
+    println()
+    println()
+  }
+
+
+  /** Prints out a message that is to be displayed to the player at the beginning of the game. */
+  def printWelcome() = {
+    println("You are lost in the woods. Find your way back home.\n")
+    println("Better hurry, 'cause Scalatut elämät is on real soon now. And you can't miss Scalkkarit, right?")
+  }
+
+
+  /** Prints out a message that is to be displayed to the player at the end of the game.
+    * The message will be different depending on whether or not the player has completed the quest. */
+  def printGoodbye() = {
+    println()
+    if (this.isComplete) {
+      println("Home at last... and phew, just in time! Well done!")
+    } else if (this.turnCount == this.timeLimit) {
+      println("Oh no! Time's up. Starved of entertainment, you collapse and weep like a child.\nGame over!")
+    } else { // game over due to player quitting
+      println("Quitter!")
+    }
+  }
+
+
+  /** Runs the game. First, a welcome message is printed, then the player gets the chance
+    * to play any number of turns until the game is over, and finally a goodbye message is printed. */
+  def run() = {
+    this.printWelcome()
+    while (!this.isOver) {
+      this.printAreaInfo()
+      this.playTurn()
+    }
+    this.printGoodbye()
+  }
+
+
+  /** Requests a command from the player, plays a game turn accordingly,
+    * and prints out a report of what happened. */
+  def playTurn() = {
+    println()
+    val command = readLine("Command: ")
+    val action = new Action(command)
+    if (action.execute(this.player)) {
+      this.turnCount += 1
+    } else {
+      println("Unknown command: \"" + command + "\".")
+    }
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+package o1.adventure.draft
+
+
+/** The class `Area` represents locations in a text adventure game world. A game world
+  * consists of areas. In general, an "area" can be pretty much anything: a room, a building,
+  * an acre of forest, or something completely different. What different areas have in
+  * common is that players can be located in them and that they can have exits leading to
+  * other, neighboring areas. An area also has a name and a description.
+  *
+  * '''NOTE: The AdventureDraft module is not even close to being well designed.
+  * See Chapter 9.1 in the course materials.'''
+  *
+  * @param name          the name of the area
+  * @param description   a description of the area */
+class Area(var name: String, var description: String) {
+
+  private var neighbors = Map[String, Area]()
+
+  def setNeighbors(exits: Vector[(String, Area)]) = {
+  for (exit <- exits) {
+    this.neighbors += exit
+  }
+}
+
+  def neighbor(direction: String) = this.neighbors.get(direction)
+
+  /** the area that is reached by exiting due north from this area; `None` if there is no northwardly exit */
+  var northNeighbor: Option[Area] = None
+  /** the area that is reached by exiting due east from this area; `None` if there is no eastwardly exit */
+  var eastNeighbor:  Option[Area] = None
+  /** the area that is reached by exiting due south from this area; `None` if there is no southwardly exit */
+  var southNeighbor: Option[Area] = None
+  /** the area that is reached by exiting due west from this area; `None` if there is no westwardly exit */
+  var westNeighbor:  Option[Area] = None
+
+
+  /** Returns a description of the area for debugging purposes. */
+  override def toString = this.name + ": " + this.description.replaceAll("\n", " ").take(150)
+
+}
+
+
+
+
+
+
+
+
+package o1.adventure.draft
+
+/** A `Player` object represents a player character controlled by the real-life user of the program.
+  *
+  * A player object's state is mutable: the player's location and possessions can change, for instance.
+  *
+  * '''NOTE: The AdventureDraft module is not even close to being well designed.
+  * See Chapter 9.1 in the course materials.'''
+  *
+  * @param startingArea  the initial location of the player */
+class Player(startingArea: Area) {
+
+  private var currentLocation = startingArea
+  private var quitCommandGiven = false
+
+  /** Determines if the player has indicated a desire to quit the game. */
+  def hasQuit = this.quitCommandGiven
+
+
+  /** Returns the current location of the player. */
+  def location = this.currentLocation
+
+
+  /** Attempts to move the player in the given direction. This is successful if there
+    * is an exit from the player's current location towards the direction name.
+    * Prints out the results of the action. */
+  def go(direction: String) = {
+  val destination = this.location.neighbor(direction)
+  }
+
+
+  /** Causes the player to rest for a short while. (This has no substantial effect in game terms.)
+    * Prints out a message stating that the player rests. */
+  def rest() = {
+    println("You rest for a while. Better get a move on, though.")
+  }
+
+
+  /** Signals that the player wants to quit the game. */
+  def quit() = {
+    this.quitCommandGiven = true
+  }
+
+
+  /** Returns a brief description of the player's state, for debugging purposes. */
+  override def toString = "Now at: " + this.location.name
+
+
+}
